@@ -58,6 +58,29 @@ class KafkaAzureConsumerTestCase(unittest.TestCase):
         self.assertEqual(mock_upload.call_count, 2)
         self.assertEqual(mock_open.call_count, 2)
 
+    def test_import_without_kafka_package_uses_stub(self):
+        """Module should provide a stub ``KafkaConsumer`` when ``kafka`` is absent."""
+
+        import importlib
+        import sys
+
+        # Ensure a clean import of the consumer module
+        sys.modules.pop("kafka_azure_consumer.consumer", None)
+
+        with mock.patch.dict(sys.modules, {"kafka": None}):
+            module = importlib.import_module("kafka_azure_consumer.consumer")
+            importlib.reload(module)
+
+        config = module.ConsumerConfig(
+            bootstrap_servers="b",
+            topic="t",
+            azure_container_url="dest",
+        )
+        consumer = module.KafkaAzureConsumer(config)
+        # Should succeed using the stub KafkaConsumer
+        consumer.connect()
+        self.assertIsInstance(consumer.consumer, module.KafkaConsumer)
+
 
 if __name__ == "__main__":
     unittest.main()

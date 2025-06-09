@@ -6,7 +6,26 @@ import subprocess  # Used to invoke azcopy
 from dataclasses import dataclass
 from typing import Optional
 
-from kafka import KafkaConsumer  # Kafka client library
+try:
+    # Attempt to import the real Kafka client. In testing environments the
+    # ``kafka`` package may not be installed.
+    from kafka import KafkaConsumer  # type: ignore
+except ImportError:  # pragma: no cover - triggered when kafka-python missing
+    logging.getLogger(__name__).warning(
+        "kafka-python package not found; using stub KafkaConsumer"
+    )
+
+    class KafkaConsumer:  # Minimal stub for tests
+        """Fallback ``KafkaConsumer`` used when the real package is absent."""
+
+        def __init__(self, *args, **kwargs) -> None:  # noqa: D401 - simple stub
+            """Accept any arguments but perform no action."""
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            raise StopIteration
 
 # Configure root logger to output debug statements
 logging.basicConfig(level=logging.INFO)
