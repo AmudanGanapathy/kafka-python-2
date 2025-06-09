@@ -58,6 +58,24 @@ class KafkaAzureConsumerTestCase(unittest.TestCase):
         self.assertEqual(mock_upload.call_count, 2)
         self.assertEqual(mock_open.call_count, 2)
 
+    @mock.patch("kafka_azure_consumer.consumer.os.remove")
+    @mock.patch("kafka_azure_consumer.consumer.open", new_callable=mock.mock_open)
+    @mock.patch.object(KafkaAzureConsumer, "upload_file")
+    def test_file_removed_after_successful_upload(
+        self, mock_upload, mock_open, mock_remove
+    ):
+        fake_messages = [mock.Mock(value={"a": 1}, offset=0)]
+        config = ConsumerConfig(
+            bootstrap_servers="b",
+            topic="t",
+            azure_container_url="dest",
+        )
+        consumer = KafkaAzureConsumer(config)
+        consumer.consumer = fake_messages
+        consumer.consume_and_upload()
+        mock_upload.assert_called_once()
+        mock_remove.assert_called_once_with("message_0.json")
+
 
 if __name__ == "__main__":
     unittest.main()
