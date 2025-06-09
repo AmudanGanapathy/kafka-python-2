@@ -2,6 +2,7 @@
 
 import json  # For decoding JSON messages
 import logging  # Standard logging library
+import os  # For removing temporary files
 import subprocess  # Used to invoke azcopy
 from dataclasses import dataclass
 from typing import Optional
@@ -92,6 +93,7 @@ class KafkaAzureConsumer:
 
                 # After writing locally, upload the file to Azure
                 self.upload_file(file_name, self.config.azure_container_url)
+                os.remove(file_name)
             except Exception:
                 # Log any exception but continue consuming subsequent messages
                 logger.exception(
